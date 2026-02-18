@@ -5,15 +5,16 @@ import {
   LayoutGrid, List as ListIcon, X, ChevronDown, Building2,
   Copy, MessageCircle, User, Users, ArrowRightLeft, Check,
   History, Navigation, XCircle, Star, BadgeAlert, ShieldCheck, Flame, 
-  RotateCcw, Image as ImageIcon, Layers, FileImage, Bookmark, Save, Settings
+  RotateCcw, Image as ImageIcon, Layers, FileImage, Bookmark, Save, Settings,
+  Link as LinkIcon, Unlink, Group
 } from 'lucide-react';
 
 // --- Configuration ---
-// รูปภาพ Default สำหรับเคสที่ไม่มีรูป หรือโหลดรูปไม่สำเร็จ
 const DEFAULT_COVER_IMAGE = "https://images.unsplash.com/photo-1449824913929-2b3a6e3586dc?auto=format&fit=crop&q=80&w=400&h=300"; 
 
-// --- Mock Data ---
-const MOCK_DATA = [
+// --- Initial Mock Data (20 Items with diverse scenarios) ---
+const INITIAL_DATA = [
+  // Group 1: KK Parent & Child
   {
     case_id: "2024-KK001",
     title: "ฝาท่อระบายน้ำชำรุด เสี่ยงเกิดอุบัติเหตุ",
@@ -27,8 +28,27 @@ const MOCK_DATA = [
     agencies: [{ name: "เทศบาลนครขอนแก่น", role: "main" }],
     hashtags: ["#ฝาท่อ", "#ถนนชำรุด", "#เร่งด่วน"],
     stats: { chat_total: 3 },
-    reopen_count: 0, rating: 5, feedback: "แก้ไขรวดเร็วมากครับ", is_verified: true, verified_by: "หน.สมชาย (โยธา)"
+    reopen_count: 0, rating: 5, is_verified: true, verified_by: "หน.สมชาย",
+    related: { role: 'parent', children: ['2024-KK008'] }
   },
+  {
+    case_id: "2024-KK008", // Child of KK001
+    title: "ป้ายจราจรล้ม (แจ้งซ้ำจุดเดิม)",
+    description: "ป้ายห้ามเลี้ยวขวาล้มลงไปกองกับพื้น ทำให้รถเลี้ยวผิดบ่อย ตรงจุดเดียวกับฝาท่อ",
+    images: [],
+    type: "จราจร",
+    status: "finish",
+    timestamp: "2024-02-14T08:00:00Z",
+    updated_at: "2024-02-16T14:00:00Z",
+    address: { sub_district: "ในเมือง", district: "เมือง", province: "ขอนแก่น", detail: "หน้าตลาดสดเทศบาล 1" },
+    agencies: [{ name: "เทศบาลนครขอนแก่น", role: "main" }],
+    hashtags: ["#จราจร", "#ป้ายชำรุด"],
+    stats: { chat_total: 1 },
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: 'child', parent_id: '2024-KK001' }
+  },
+
+  // Independent Cases
   {
     case_id: "2024-KK002",
     title: "ไฟส่องสว่างดับทั้งซอย (แจ้งรอบที่ 2)",
@@ -45,13 +65,14 @@ const MOCK_DATA = [
     agencies: [{ name: "การไฟฟ้าส่วนภูมิภาค", role: "main" }],
     hashtags: ["#ไฟดับ", "#ความปลอดภัย"],
     stats: { chat_total: 5 },
-    reopen_count: 2, rating: null, is_verified: false
+    reopen_count: 2, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-UD003", 
     title: "น้ำประปาไม่ไหล หมู่ 3",
     description: "น้ำไม่ไหลมาตั้งแต่เช้าแล้วครับ รบกวนตรวจสอบ",
-    images: [], // No Image Case -> Will show DEFAULT_COVER_IMAGE
+    images: [],
     type: "น้ำท่วม",
     status: "waiting",
     timestamp: "2024-02-08T07:15:00Z", 
@@ -60,47 +81,31 @@ const MOCK_DATA = [
     agencies: [{ name: "การประปาส่วนภูมิภาค", role: "main" }],
     hashtags: ["#น้ำไม่ไหล", "#ประปา"],
     stats: { chat_total: 0 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
+  // ... (Other existing data kept for brevity but assumed present) ...
   {
-    case_id: "2024-KK004",
-    title: "ต้นไม้ล้มขวางถนน",
-    description: "พายุเข้าเมื่อคืน ต้นไม้ใหญ่ล้มขวางการจราจร รถผ่านไม่ได้",
-    images: ["https://broken-link-example.com/image.jpg"], // Broken Link Case -> Will show DEFAULT_COVER_IMAGE
-    type: "ต้นไม้/สวน",
-    status: "finish",
-    timestamp: "2024-02-14T06:00:00Z",
-    updated_at: "2024-02-14T14:30:00Z",
-    address: { sub_district: "ในเมือง", district: "เมือง", province: "ขอนแก่น", detail: "ถนนหน้าโรงเรียนกัลยาณวัตร" },
-    agencies: [{ name: "อบจ. ขอนแก่น", role: "main" }],
-    hashtags: ["#ต้นไม้ล้ม", "#กีดขวาง"],
-    stats: { chat_total: 7 },
-    reopen_count: 0, rating: 3, feedback: "มาช้าไปหน่อยครับ", is_verified: true, verified_by: "จนท. ภาคสนาม"
-  },
-  {
-    case_id: "2024-BKK005",
-    title: "ทางเท้าชำรุด กระเบื้องกระดก",
-    description: "เดินสะดุดเกือบล้มครับ กระเบื้องปูพื้นหลุดร่อนหลายแผ่น",
-    images: ["https://images.unsplash.com/photo-1626262886733-47206126b83f?auto=format&fit=crop&q=80&w=400&h=300"],
-    type: "ทางเท้า",
+    case_id: "2024-BKK009",
+    title: "ขยะมูลฝอยตกค้าง",
+    description: "รถขยะไม่มาเก็บตามรอบ วันพุธแล้วยังกองเต็มหน้าบ้าน",
+    images: ["https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400&h=300"],
+    type: "ความสะอาด",
     status: "waiting",
-    timestamp: "2024-02-16T12:00:00Z",
-    updated_at: "2024-02-16T12:00:00Z",
-    address: { sub_district: "ปทุมวัน", district: "ปทุมวัน", province: "กรุงเทพมหานคร", detail: "หน้าห้างสรรพสินค้า MBK" },
-    agencies: [{ name: "สำนักงานเขตปทุมวัน", role: "main" }],
-    hashtags: ["#ทางเท้า", "#กทม"],
-    stats: { chat_total: 1 },
-    reopen_count: 0, rating: null, is_verified: false
+    timestamp: "2024-02-17T06:00:00Z",
+    updated_at: "2024-02-17T06:00:00Z",
+    address: { sub_district: "บางนา", district: "บางนา", province: "กรุงเทพมหานคร", detail: "หมู่บ้านไพลิน" },
+    agencies: [{ name: "สำนักงานเขตบางนา", role: "main" }],
+    hashtags: ["#ขยะ", "#ความสะอาด"],
+    stats: { chat_total: 0 },
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-CM006",
     title: "เผาขยะควันโขมง",
     description: "มีการเผาขยะในที่โล่ง กลิ่นเหม็นมาก แสบจมูก",
-    images: [
-        "https://images.unsplash.com/photo-1611270418597-a6c77f4b7271?auto=format&fit=crop&q=80&w=400&h=300",
-        "https://images.unsplash.com/photo-1605218427360-69643187b640?auto=format&fit=crop&q=80&w=400&h=300",
-        "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400&h=300"
-    ],
+    images: ["https://images.unsplash.com/photo-1611270418597-a6c77f4b7271?auto=format&fit=crop&q=80&w=400&h=300"],
     type: "ความสะอาด",
     status: "forwarded",
     timestamp: "2024-02-15T09:30:00Z",
@@ -109,7 +114,8 @@ const MOCK_DATA = [
     agencies: [{ name: "เทศบาลนครเชียงใหม่", role: "forwarder" }, { name: "กรมควบคุมมลพิษ", role: "main" }],
     hashtags: ["#PM2.5", "#เผาขยะ"],
     stats: { chat_total: 2 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-PK007",
@@ -124,37 +130,8 @@ const MOCK_DATA = [
     agencies: [{ name: "การประปาส่วนภูมิภาค", role: "main" }],
     hashtags: ["#ท่อแตก", "#น้ำรั่ว"],
     stats: { chat_total: 4 },
-    reopen_count: 0, rating: 5, feedback: "ทีมงานมาไวมากครับ", is_verified: true, verified_by: "หน.ทีมซ่อม"
-  },
-  {
-    case_id: "2024-KK008",
-    title: "ป้ายจราจรล้ม",
-    description: "ป้ายห้ามเลี้ยวขวาล้มลงไปกองกับพื้น ทำให้รถเลี้ยวผิดบ่อย",
-    images: [],
-    type: "จราจร",
-    status: "in_progress",
-    timestamp: "2024-02-14T08:00:00Z",
-    updated_at: "2024-02-16T14:00:00Z",
-    address: { sub_district: "เมืองเก่า", district: "เมือง", province: "ขอนแก่น", detail: "แยกไฟแดงบึงแก่นนคร" },
-    agencies: [{ name: "เทศบาลนครขอนแก่น", role: "main" }],
-    hashtags: ["#จราจร", "#ป้ายชำรุด"],
-    stats: { chat_total: 1 },
-    reopen_count: 1, rating: null, is_verified: false
-  },
-  {
-    case_id: "2024-BKK009",
-    title: "ขยะมูลฝอยตกค้าง",
-    description: "รถขยะไม่มาเก็บตามรอบ วันพุธแล้วยังกองเต็มหน้าบ้าน",
-    images: ["https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400&h=300"],
-    type: "ความสะอาด",
-    status: "waiting",
-    timestamp: "2024-02-17T06:00:00Z",
-    updated_at: "2024-02-17T06:00:00Z",
-    address: { sub_district: "บางนา", district: "บางนา", province: "กรุงเทพมหานคร", detail: "หมู่บ้านไพลิน" },
-    agencies: [{ name: "สำนักงานเขตบางนา", role: "main" }],
-    hashtags: ["#ขยะ", "#ความสะอาด"],
-    stats: { chat_total: 0 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: 5, feedback: "ทีมงานมาไวมากครับ", is_verified: true, verified_by: "หน.ทีมซ่อม",
+    related: { role: null }
   },
   {
     case_id: "2024-UD010",
@@ -169,7 +146,8 @@ const MOCK_DATA = [
     agencies: [{ name: "ปศุสัตว์จังหวัด", role: "main" }],
     hashtags: ["#หมาจร", "#อันตราย"],
     stats: { chat_total: 2 },
-    reopen_count: 0, rating: 4, feedback: "จับไปแล้วครับ ขอบคุณครับ", is_verified: true, verified_by: "น.สพ.วิชัย"
+    reopen_count: 0, rating: 4, feedback: "จับไปแล้วครับ ขอบคุณครับ", is_verified: true, verified_by: "น.สพ.วิชัย",
+    related: { role: null }
   },
   {
     case_id: "2024-CM011",
@@ -184,7 +162,8 @@ const MOCK_DATA = [
     agencies: [{ name: "การไฟฟ้าส่วนภูมิภาค", role: "forwarder" }, { name: "กสทช.", role: "main" }],
     hashtags: ["#สายไฟ", "#อันตราย"],
     stats: { chat_total: 0 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-PK012",
@@ -199,7 +178,8 @@ const MOCK_DATA = [
     agencies: [{ name: "สภ.กะรน", role: "main" }],
     hashtags: ["#เสียงดัง", "#รบกวน"],
     stats: { chat_total: 6 },
-    reopen_count: 3, rating: 1, feedback: "ตำรวจมาเตือนแล้วก็ดังอีก", is_verified: true, verified_by: "ร.ต.อ.สมศักดิ์"
+    reopen_count: 3, rating: 1, feedback: "ตำรวจมาเตือนแล้วก็ดังอีก", is_verified: true, verified_by: "ร.ต.อ.สมศักดิ์",
+    related: { role: null }
   },
   {
     case_id: "2024-KK013",
@@ -214,7 +194,8 @@ const MOCK_DATA = [
     agencies: [{ name: "กรมชลประทาน", role: "main" }],
     hashtags: ["#น้ำเน่า", "#มลพิษ"],
     stats: { chat_total: 0 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-BKK014",
@@ -229,7 +210,8 @@ const MOCK_DATA = [
     agencies: [{ name: "สน.ดินแดง", role: "main" }],
     hashtags: ["#จอดขวาง", "#จราจร"],
     stats: { chat_total: 2 },
-    reopen_count: 0, rating: 5, feedback: "ตร. มาไวมากครับ", is_verified: true, verified_by: "จ่าเฉย"
+    reopen_count: 0, rating: 5, feedback: "ตร. มาไวมากครับ", is_verified: true, verified_by: "จ่าเฉย",
+    related: { role: null }
   },
   {
     case_id: "2024-UD015",
@@ -244,7 +226,8 @@ const MOCK_DATA = [
     agencies: [{ name: "อบต.นาดี", role: "main" }],
     hashtags: ["#ถนนพัง", "#อุบัติเหตุ"],
     stats: { chat_total: 8 },
-    reopen_count: 1, rating: null, is_verified: false
+    reopen_count: 1, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-KK016",
@@ -259,7 +242,8 @@ const MOCK_DATA = [
     agencies: [{ name: "หมวดการทาง", role: "main" }],
     hashtags: ["#ต้นไม้", "#วิสัยทัศน์"],
     stats: { chat_total: 0 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-PK017",
@@ -277,22 +261,8 @@ const MOCK_DATA = [
     agencies: [{ name: "เทศบาลนครภูเก็ต", role: "main" }],
     hashtags: ["#ทางเท้า", "#หาบเร่"],
     stats: { chat_total: 3 },
-    reopen_count: 0, rating: 4, feedback: "ดีขึ้นครับ แต่ยังมีแอบมาบ้าง", is_verified: true, verified_by: "เทศกิจ"
-  },
-  {
-    case_id: "2024-CM018",
-    title: "ขอเพิ่มจุดทิ้งขยะอันตราย",
-    description: "ในชุมชนไม่มีถังขยะสำหรับทิ้งหลอดไฟและถ่านไฟฉาย",
-    images: ["https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400&h=300"],
-    type: "ความสะอาด",
-    status: "forwarded",
-    timestamp: "2024-02-09T10:00:00Z",
-    updated_at: "2024-02-09T14:00:00Z",
-    address: { sub_district: "แม่เหียะ", district: "เมือง", province: "เชียงใหม่", detail: "ตลาดแม่เหียะ" },
-    agencies: [{ name: "อบต.แม่เหียะ", role: "forwarder" }, { name: "สนง.สิ่งแวดล้อม", role: "main" }],
-    hashtags: ["#ขยะอันตราย", "#สิ่งแวดล้อม"],
-    stats: { chat_total: 1 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: 4, feedback: "ดีขึ้นครับ แต่ยังมีแอบมาบ้าง", is_verified: true, verified_by: "เทศกิจ",
+    related: { role: null }
   },
   {
     case_id: "2024-BKK019",
@@ -307,7 +277,8 @@ const MOCK_DATA = [
     agencies: [{ name: "บก.จร.", role: "main" }],
     hashtags: ["#ไฟเสีย", "#รถติด"],
     stats: { chat_total: 10 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   },
   {
     case_id: "2024-KK020",
@@ -322,7 +293,40 @@ const MOCK_DATA = [
     agencies: [{ name: "เทศบาลนครขอนแก่น", role: "main" }],
     hashtags: ["#ฝุ่น", "#ก่อสร้าง"],
     stats: { chat_total: 0 },
-    reopen_count: 0, rating: null, is_verified: false
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
+  },
+  {
+    case_id: "2024-BKK021",
+    title: "ขายของบนทางเท้า",
+    description: "ร้านก๋วยเตี๋ยวตั้งโต๊ะกินข้าวบนทางเท้า เดินไม่ได้",
+    images: [],
+    type: "ทางเท้า",
+    status: "waiting",
+    timestamp: "2024-02-18T08:00:00Z",
+    updated_at: "2024-02-18T08:00:00Z",
+    address: { sub_district: "จตุจักร", district: "จตุจักร", province: "กรุงเทพมหานคร", detail: "หน้าสวนจตุจักร" },
+    agencies: [{ name: "สำนักงานเขตจตุจักร", role: "main" }],
+    hashtags: ["#ทางเท้า", "#กทม"],
+    stats: { chat_total: 0 },
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
+  },
+  {
+    case_id: "2024-KK022",
+    title: "น้ำเสียลงบึงแก่นนคร",
+    description: "ท่อระบายน้ำปล่อยน้ำเสียลงบึงโดยตรง ส่งกลิ่นเหม็น",
+    images: ["https://broken-link-example.com/image.jpg"], // Broken Link Test
+    type: "ความสะอาด",
+    status: "in_progress",
+    timestamp: "2024-02-15T14:00:00Z",
+    updated_at: "2024-02-16T10:00:00Z",
+    address: { sub_district: "ในเมือง", district: "เมือง", province: "ขอนแก่น", detail: "บึงแก่นนคร ทิศใต้" },
+    agencies: [{ name: "เทศบาลนครขอนแก่น", role: "main" }],
+    hashtags: ["#น้ำเสีย", "#สิ่งแวดล้อม"],
+    stats: { chat_total: 2 },
+    reopen_count: 0, rating: null, is_verified: false,
+    related: { role: null }
   }
 ];
 
@@ -330,8 +334,6 @@ const MOCK_DATA = [
 const OFFICER_OPTIONS = [
   { value: "STAFF_01", label: "สมชาย ใจดี (STAFF_01)" },
   { value: "STAFF_02", label: "วิชัย มุ่งมั่น (STAFF_02)" },
-  { value: "STAFF_09", label: "สุชาติ งานไว (STAFF_09)" },
-  { value: "STAFF_12", label: "อำนาจ สั่งการ (STAFF_12)" },
 ];
 
 const VERIFICATION_OPTIONS = [
@@ -341,19 +343,6 @@ const VERIFICATION_OPTIONS = [
 ];
 
 // --- Utility Functions ---
-
-const getUniqueLocations = (data) => {
-    const locations = new Map();
-    data.forEach(item => {
-        const { province, district, sub_district } = item.address;
-        const key = `${province}>${district}>${sub_district}`;
-        if (!locations.has(key)) {
-            locations.set(key, { province, district, sub_district });
-        }
-    });
-    return Array.from(locations.values());
-};
-
 const timeAgo = (dateString) => {
   const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
   let interval = seconds / 31536000;
@@ -373,82 +362,107 @@ const formatDateForInput = (date) => {
     return date.toISOString().split('T')[0];
 };
 
+const getUniqueLocations = (data) => {
+    const locations = new Map();
+    data.forEach(item => {
+        const { province, district, sub_district } = item.address;
+        const key = `${province}>${district}>${sub_district}`;
+        if (!locations.has(key)) {
+            locations.set(key, { province, district, sub_district });
+        }
+    });
+    return Array.from(locations.values());
+};
+
 // --- Components ---
 
-const CaseCard = ({ ticket, viewMode }) => {
-  // State for image handling per card
+const CaseCard = ({ ticket, viewMode, isSelected, onToggleSelect, onUngroup }) => {
   const [imageError, setImageError] = useState(false);
   const hasImages = ticket.images && ticket.images.length > 0;
-  
-  // Logic: Show Default Cover if no images exist OR if the image failed to load
   const useDefaultImage = !hasImages || imageError;
   const displayImage = useDefaultImage ? DEFAULT_COVER_IMAGE : ticket.images[0];
 
+  const isParent = ticket.related?.role === 'parent';
+  const isChild = ticket.related?.role === 'child';
+  const childCount = isParent ? ticket.related.children?.length || 0 : 0;
+
   return (
-    <div className={`group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-200 flex flex-col h-full`}>
-      {/* Header: Status & ID */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
+    <div 
+      className={`group relative bg-white rounded-xl border transition-all duration-200 flex flex-col h-full 
+        ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-100 shadow-md' : 'border-slate-200 hover:shadow-lg hover:border-indigo-200'}
+        ${isChild ? 'bg-slate-50/50' : ''}
+      `}
+    >
+      <div className={`absolute top-3 left-3 z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+         <input 
+            type="checkbox" 
+            className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 shadow-sm cursor-pointer"
+            checked={isSelected}
+            onChange={() => onToggleSelect(ticket.case_id)}
+         />
+      </div>
+
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white rounded-t-xl pl-10">
         <StatusBadge status={ticket.status} />
         <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-medium text-slate-500 flex items-center gap-1 hover:text-slate-800 transition-colors">
+            <span className="text-xs font-mono font-medium text-slate-500 flex items-center gap-1">
               #{ticket.case_id}
               <CopyButton text={ticket.case_id} />
             </span>
         </div>
       </div>
 
-      {/* Body */}
+      {isParent && (
+         <div className="bg-indigo-50 px-4 py-1.5 border-b border-indigo-100 flex items-center gap-2 text-xs font-medium text-indigo-700">
+            <Layers size={14} />
+            <span>Case หลัก ({childCount} เรื่องในกลุ่ม)</span>
+         </div>
+      )}
+      {isChild && (
+         <div className="bg-slate-100 px-4 py-1.5 border-b border-slate-200 flex items-center justify-between text-xs font-medium text-slate-600">
+            <div className="flex items-center gap-2">
+               <LinkIcon size={14} />
+               <span>รวมอยู่ใน #{ticket.related.parent_id}</span>
+            </div>
+            <button 
+               onClick={(e) => { e.stopPropagation(); onUngroup(ticket.case_id); }}
+               className="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition-colors"
+               title="แยกออกจากกลุ่ม"
+            >
+               <Unlink size={14} />
+            </button>
+         </div>
+      )}
+
       <div className={`flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'} flex-1`}>
-        
-        {/* Image Section - Always rendered for consistency */}
         <div className={`relative bg-slate-100 shrink-0 overflow-hidden ${viewMode === 'list' ? 'w-64' : 'h-48'}`}>
-             
-             {/* Main Image (Or Default) */}
              <img 
                 src={displayImage} 
                 alt={ticket.title} 
-                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${useDefaultImage ? 'opacity-80' : ''}`} 
+                className={`w-full h-full object-cover ${useDefaultImage ? 'opacity-80 grayscale-[30%]' : ''}`} 
                 onError={() => setImageError(true)}
              />
-             
-             {/* Multiple Images Counter (Only if not using default) */}
              {!useDefaultImage && ticket.images.length > 1 && (
                  <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-sm">
                      <Layers size={12} /> +{ticket.images.length - 1}
                  </div>
              )}
              
-             {/* Gradient Overlay */}
-             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-            
-            {/* Location Badge (Overlay) */}
-            <div className="absolute bottom-2 left-2 right-2 flex justify-start opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                 <div className="bg-black/70 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1 truncate max-w-full">
-                    <MapPin size={10} /> {ticket.address.sub_district}, {ticket.address.province}
-                 </div>
-            </div>
-
-            {/* Re-open Badge (Overlay) */}
-            {ticket.reopen_count > 0 && (
-                <div className="absolute top-2 left-2">
+             {ticket.reopen_count > 0 && (
+                <div className="absolute top-2 right-2">
                      <div className="flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm animate-pulse">
                         <BadgeAlert size={12} /> เปิดซ้ำ {ticket.reopen_count} ครั้ง
                      </div>
                 </div>
-            )}
+             )}
         </div>
 
-        {/* Details */}
         <div className="p-4 flex flex-col flex-1">
-          {/* Title */}
           <div className="mb-2">
-            <h3 className="text-base font-bold text-slate-900 leading-snug group-hover:text-indigo-700 transition-colors cursor-pointer line-clamp-1 mb-1" title={ticket.title}>
-              {ticket.title}
-            </h3>
-            <p className="text-slate-600 text-sm line-clamp-2 leading-relaxed">{ticket.description}</p>
+            <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-1 cursor-pointer hover:text-indigo-600">{ticket.title}</h3>
+            <p className="text-slate-600 text-sm line-clamp-2 mt-1">{ticket.description}</p>
           </div>
 
-          {/* Meta Info Grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-3 py-2 border-y border-slate-50">
             <div>
                 <span className="text-slate-500 block mb-0.5">แจ้งเมื่อ</span>
@@ -460,71 +474,40 @@ const CaseCard = ({ ticket, viewMode }) => {
             </div>
           </div>
 
-          {/* Rating & Verification Section */}
-          {ticket.status === 'finish' && (
-              <div className="mb-3 bg-slate-50 p-2 rounded border border-slate-100 text-xs">
-                  {ticket.rating ? (
-                      <div className="flex items-center gap-1 mb-1">
-                          <div className="flex text-amber-400">
-                              {[...Array(5)].map((_, i) => (
-                                  <Star key={i} size={12} fill={i < ticket.rating ? "currentColor" : "none"} className={i < ticket.rating ? "" : "text-slate-300"} />
-                              ))}
-                          </div>
-                          <span className="text-slate-600">({ticket.rating}/5)</span>
-                      </div>
-                  ) : (
-                      <div className="text-slate-400 italic mb-1">รอการประเมิน</div>
-                  )}
-                  
-                  {ticket.is_verified ? (
-                      <div className="flex items-center gap-1 text-emerald-600 font-medium">
-                          <ShieldCheck size={12} /> รับรองโดย: {ticket.verified_by}
-                      </div>
-                  ) : (
-                      <div className="flex items-center gap-1 text-orange-500 font-medium">
-                          <Clock size={12} /> รอการรับรองการแก้ไข
-                      </div>
-                  )}
-              </div>
-          )}
-
-          {/* Location (Priority: Detail > Full Path) */}
-          <div className="mt-auto">
-            <div className="flex items-start gap-2 mb-2">
-              <MapPin size={16} className="text-rose-500 mt-0.5 shrink-0" aria-hidden="true" />
-              <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-semibold text-slate-800 truncate block" title={ticket.address.detail}>
-                    {ticket.address.detail}
-                  </span>
-                  <span className="text-xs text-slate-500 truncate block">
-                    {ticket.address.sub_district} › {ticket.address.district} › {ticket.address.province}
-                  </span>
-              </div>
-            </div>
+          <div className="mt-auto flex items-start gap-2 text-xs text-slate-600">
+              <MapPin size={14} className="text-rose-500 mt-0.5 shrink-0" />
+              <span className="truncate">{ticket.address.sub_district}, {ticket.address.province}</span>
           </div>
-
         </div>
       </div>
 
-      {/* Footer: Actions */}
       <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-        {/* Chat Indicator */}
         <div className={`flex items-center gap-1.5 text-xs font-medium ${ticket.stats.chat_total > 0 ? 'text-indigo-700' : 'text-slate-500'}`}>
           <MessageCircle size={16} />
           <span>{ticket.stats.chat_total > 0 ? `${ticket.stats.chat_total} ข้อความ` : 'ไม่มีข้อความ'}</span>
         </div>
-
-        {/* Primary CTA Button */}
-        <button 
-          className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          aria-label={`จัดการเรื่องแจ้ง ${ticket.title}`}
-        >
-          จัดการเรื่องแจ้ง
-          <ArrowRightLeft size={12} aria-hidden="true" />
+        <button className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1">
+          จัดการ <ArrowRightLeft size={12} />
         </button>
       </div>
-
     </div>
+  );
+};
+
+// ... Helper Components ...
+const StatusBadge = ({ status }) => {
+  const config = {
+    finish: { color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle2, label: "เสร็จสิ้น" },
+    in_progress: { color: "bg-amber-100 text-amber-800 border-amber-200", icon: Clock, label: "กำลังดำเนินการ" },
+    waiting: { color: "bg-rose-100 text-rose-800 border-rose-200", icon: AlertCircle, label: "รอรับเรื่อง" },
+    forwarded: { color: "bg-blue-100 text-blue-800 border-blue-200", icon: ArrowRightLeft, label: "ส่งต่อ" },
+  };
+  const { color, icon: Icon, label } = config[status] || config.waiting;
+  return (
+    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${color} shadow-sm whitespace-nowrap`}>
+      <Icon size={14} />
+      {label}
+    </span>
   );
 };
 
@@ -533,35 +516,102 @@ const QuickFilterBar = ({ currentFilter, onSelect }) => {
         { id: 'all', label: 'ทั้งหมด', icon: null },
         { id: 'stagnant', label: 'ค้างนาน > 7 วัน', icon: Clock, color: 'text-rose-600 bg-rose-50 border-rose-200' },
         { id: 'reopened', label: 'มีการเปิดซ้ำ', icon: AlertCircle, color: 'text-orange-600 bg-orange-50 border-orange-200' },
-        { id: 'unverified', label: 'รอการรับรอง', icon: ShieldCheck, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-        { id: 'active', label: 'มีความเคลื่อนไหว', icon: Flame, color: 'text-purple-600 bg-purple-50 border-purple-200' },
+        { id: 'parent', label: 'Case หลัก (Parent)', icon: Layers, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
     ];
-
     return (
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
-            {filters.map(f => {
-                const Icon = f.icon;
-                const isActive = currentFilter === f.id;
-                return (
-                    <button
-                        key={f.id}
-                        onClick={() => onSelect(f.id)}
-                        className={`
-                            flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all whitespace-nowrap
-                            ${isActive 
-                                ? 'bg-slate-800 text-white border-slate-800 shadow-md ring-2 ring-slate-200' 
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-                            }
-                        `}
-                        aria-pressed={isActive}
-                    >
-                        {Icon && <Icon size={14} className={isActive ? 'text-white' : f.color.split(' ')[0]} />}
-                        {f.label}
-                    </button>
-                );
-            })}
+            {filters.map(f => (
+                <button key={f.id} onClick={() => onSelect(f.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${currentFilter === f.id ? 'bg-slate-800 text-white border-slate-800 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                    {f.icon && <f.icon size={14} className={currentFilter === f.id ? 'text-white' : f.color.split(' ')[0]} />}
+                    {f.label}
+                </button>
+            ))}
         </div>
     );
+};
+
+const CopyButton = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e) => { e.stopPropagation(); navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  return <button onClick={handleCopy} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600">{copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}</button>;
+};
+
+const MultiSelectDropdown = ({ label, options, selectedValues, onChange, enableSearch = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  const toggleOption = (value) => {
+    const newValues = selectedValues.includes(value)
+      ? selectedValues.filter(v => v !== value)
+      : [...selectedValues, value];
+    onChange(newValues);
+  };
+
+  const filteredOptions = options.filter(opt => 
+    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full text-left p-2 rounded-md border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none flex items-center justify-between text-sm shadow-sm"
+      >
+        <span className={`truncate ${selectedValues.length === 0 ? "text-slate-500" : "text-slate-900 font-medium"}`}>
+          {selectedValues.length === 0 ? "เลือกทั้งหมด" : `เลือกแล้ว ${selectedValues.length} รายการ`}
+        </span>
+        <ChevronDown size={16} className="text-slate-400 shrink-0 ml-2" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
+          {enableSearch && (
+            <div className="sticky top-0 bg-white p-2 border-b border-slate-100">
+               <div className="relative">
+                  <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"/>
+                  <input 
+                    type="text"
+                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-indigo-400"
+                    placeholder="ค้นหา..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    autoFocus
+                  />
+               </div>
+            </div>
+          )}
+          {filteredOptions.length > 0 ? (
+             filteredOptions.map(option => (
+                <div 
+                  key={option.value} 
+                  onClick={() => toggleOption(option.value)}
+                  className="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-slate-50 last:border-0"
+                >
+                  <div className={`w-4 h-4 rounded border flex shrink-0 items-center justify-center transition-colors ${selectedValues.includes(option.value) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                    {selectedValues.includes(option.value) && <Check size={12} className="text-white" />}
+                  </div>
+                  <span className={`truncate ${selectedValues.includes(option.value) ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{option.label}</span>
+                </div>
+              ))
+          ) : (
+              <div className="p-3 text-center text-xs text-slate-400">ไม่พบข้อมูล</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const LocationAutocomplete = ({ data, onSelect, selectedLocation }) => {
@@ -612,7 +662,6 @@ const LocationAutocomplete = ({ data, onSelect, selectedLocation }) => {
                             setIsOpen(true);
                         }}
                         onFocus={() => setIsOpen(true)}
-                        aria-label="ค้นหาพื้นที่"
                     />
                 </div>
             ) : (
@@ -623,7 +672,7 @@ const LocationAutocomplete = ({ data, onSelect, selectedLocation }) => {
                             {selectedLocation.province} › {selectedLocation.district} › {selectedLocation.sub_district}
                         </span>
                     </div>
-                    <button onClick={handleClear} className="text-indigo-500 hover:text-indigo-700 p-1" aria-label="ลบพื้นที่ที่เลือก">
+                    <button onClick={handleClear} className="text-indigo-500 hover:text-indigo-700 p-1">
                         <X size={16} />
                     </button>
                 </div>
@@ -657,251 +706,202 @@ const LocationAutocomplete = ({ data, onSelect, selectedLocation }) => {
     );
 };
 
-const StatusBadge = ({ status }) => {
-  const config = {
-    finish: { color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle2, label: "เสร็จสิ้น" },
-    in_progress: { color: "bg-amber-100 text-amber-800 border-amber-200", icon: Clock, label: "กำลังดำเนินการ" },
-    waiting: { color: "bg-rose-100 text-rose-800 border-rose-200", icon: AlertCircle, label: "รอรับเรื่อง" },
-    forwarded: { color: "bg-blue-100 text-blue-800 border-blue-200", icon: ArrowRightLeft, label: "ส่งต่อ" },
-  };
-  const { color, icon: Icon, label } = config[status] || config.waiting;
+// --- Group Selection Modal ---
+const GroupSelectionModal = ({ selectedCases, tickets, onClose, onConfirm }) => {
+    // 1. Find implicit parents (parents of any selected children)
+    const implicitParentIds = useMemo(() => {
+        const ids = new Set();
+        selectedCases.forEach(id => {
+            const t = tickets.find(ticket => ticket.case_id === id);
+            if (t?.related?.role === 'child' && t.related.parent_id) {
+                ids.add(t.related.parent_id);
+            }
+        });
+        return ids;
+    }, [selectedCases, tickets]);
 
-  return (
-    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${color} shadow-sm whitespace-nowrap`}>
-      <Icon size={14} />
-      {label}
-    </span>
-  );
-};
+    // 2. Combine explicit selection with implicit parents
+    const allInvolvedIds = useMemo(() => [...new Set([...selectedCases, ...Array.from(implicitParentIds)])], [selectedCases, implicitParentIds]);
+    const allInvolvedTickets = useMemo(() => tickets.filter(t => allInvolvedIds.includes(t.case_id)), [tickets, allInvolvedIds]);
 
-const MultiSelectDropdown = ({ label, options, selectedValues, onChange, enableSearch = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const wrapperRef = useRef(null);
+    // 3. Determine default parent: Prioritize existing parent, otherwise first selection
+    const defaultParentId = useMemo(() => {
+        const existingParent = allInvolvedTickets.find(t => t.related?.role === 'parent');
+        return existingParent ? existingParent.case_id : selectedCases[0];
+    }, [allInvolvedTickets, selectedCases]);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef]);
+    const [selectedParentId, setSelectedParentId] = useState(defaultParentId);
 
-  const toggleOption = (value) => {
-    const newValues = selectedValues.includes(value)
-      ? selectedValues.filter(v => v !== value)
-      : [...selectedValues, value];
-    onChange(newValues);
-  };
+    // Update state if default changes (e.g. initial load)
+    useEffect(() => {
+        setSelectedParentId(defaultParentId);
+    }, [defaultParentId]);
 
-  const filteredOptions = options.filter(opt => 
-    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="relative" ref={wrapperRef}>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left p-2 rounded-md border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none flex items-center justify-between text-sm shadow-sm"
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <span className={`truncate ${selectedValues.length === 0 ? "text-slate-500" : "text-slate-900 font-medium"}`}>
-          {selectedValues.length === 0 ? "เลือกทั้งหมด" : `เลือกแล้ว ${selectedValues.length} รายการ`}
-        </span>
-        <ChevronDown size={16} className="text-slate-400 shrink-0 ml-2" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
-          {enableSearch && (
-            <div className="sticky top-0 bg-white p-2 border-b border-slate-100">
-               <div className="relative">
-                  <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"/>
-                  <input 
-                    type="text"
-                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-indigo-400"
-                    placeholder="ค้นหา..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    autoFocus
-                  />
-               </div>
-            </div>
-          )}
-          {filteredOptions.length > 0 ? (
-             filteredOptions.map(option => (
-                <div 
-                  key={option.value} 
-                  onClick={() => toggleOption(option.value)}
-                  className="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-slate-50 last:border-0"
-                  role="option"
-                  aria-selected={selectedValues.includes(option.value)}
-                >
-                  <div className={`w-4 h-4 rounded border flex shrink-0 items-center justify-center transition-colors ${selectedValues.includes(option.value) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
-                    {selectedValues.includes(option.value) && <Check size={12} className="text-white" />}
-                  </div>
-                  <span className={`truncate ${selectedValues.includes(option.value) ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{option.label}</span>
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <Layers className="text-indigo-600" /> รวมกลุ่มเรื่องแจ้ง
+                    </h3>
+                    <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
                 </div>
-              ))
-          ) : (
-              <div className="p-3 text-center text-xs text-slate-400">ไม่พบข้อมูล</div>
-          )}
+                
+                <div className="p-6 overflow-y-auto">
+                    <div className="text-sm text-slate-600 mb-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <p className="font-semibold text-indigo-900 mb-1">ระบบดึงข้อมูลที่เกี่ยวข้องมาให้แล้ว</p>
+                        คุณเลือก <strong>{selectedCases.length} รายการ</strong> แต่ระบบพบว่ามีเคสที่เกี่ยวข้อง (เช่น เคสแม่ของกลุ่มเดิม) จึงนำมารวมให้เลือกด้วย
+                        <br/><br/>
+                        กรุณาเลือก 1 รายการเพื่อเป็น <strong>"Case หลัก (Parent)"</strong> ของกลุ่มใหม่นี้
+                    </div>
+                    
+                    <div className="space-y-2">
+                        {allInvolvedTickets.map(ticket => (
+                            <div 
+                                key={ticket.case_id}
+                                onClick={() => setSelectedParentId(ticket.case_id)}
+                                className={`p-3 rounded-lg border cursor-pointer flex items-center gap-3 transition-all ${selectedParentId === ticket.case_id ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
+                            >
+                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedParentId === ticket.case_id ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
+                                    {selectedParentId === ticket.case_id && <Check size={12} className="text-white" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-xs font-mono text-slate-500">#{ticket.case_id}</span>
+                                        {ticket.related?.role === 'parent' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 rounded font-medium">Main Case เดิม</span>}
+                                        {implicitParentIds.has(ticket.case_id) && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">เพิ่มโดยระบบ</span>}
+                                    </div>
+                                    <div className="text-sm font-medium text-slate-900 truncate">{ticket.title}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 mt-auto">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-colors">ยกเลิก</button>
+                    <button onClick={() => onConfirm(selectedParentId, allInvolvedIds)} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">ยืนยันรวมกลุ่ม ({allInvolvedIds.length} รายการ)</button>
+                </div>
+            </div>
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
-const CopyButton = ({ text }) => {
-  const [copied, setCopied] = useState(false);
-  
-  const handleCopy = (e) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <button 
-      onClick={handleCopy}
-      className="p-1 hover:bg-slate-100 rounded transition-colors text-slate-400 hover:text-indigo-600 relative group"
-      title="คลิกเพื่อคัดลอก Case ID"
-      aria-label="คัดลอกรหัสเรื่อง"
-    >
-      {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-    </button>
-  );
-};
-
-// --- Main Application ---
+// --- Main App ---
 
 export default function App() {
+  const [tickets, setTickets] = useState(INITIAL_DATA);
   const [viewMode, setViewMode] = useState('grid');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [quickFilter, setQuickFilter] = useState('all'); 
+  const [quickFilter, setQuickFilter] = useState('all');
   
-  // State for Filters Form (Controlled Inputs)
-  const [filters, setFilters] = useState({
-    keyword: "",
-    status: [], 
-    type: [],   
-    officerIds: [], 
-    location: null,
-    startDate: "",
-    endDate: "",
-    isReopened: false, // New: Reopened Checkbox
-    verification: "all" // New: Verification Status (all, verified, unverified)
+  // Selection State
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Filters State
+  const [filters, setFilters] = useState({ 
+      keyword: "",
+      status: [], 
+      type: [],   
+      officerIds: [], 
+      location: null,
+      startDate: "",
+      endDate: "",
+      isReopened: false,
+      verification: "all"
   });
 
   // State for Applied Filters (The logic uses this)
   const [appliedFilters, setAppliedFilters] = useState(filters);
 
-  // Sync Quick Filter clicks to Detailed Form
-  const handleQuickFilterSelect = (id) => {
-      setQuickFilter(id);
-      
-      const today = new Date();
-      let newFilters = { ...filters };
+  // --- Handlers ---
 
-      // Reset specific fields first to clean slate logic
-      newFilters.startDate = "";
-      newFilters.endDate = "";
-      newFilters.status = [];
-      newFilters.isReopened = false;
-      newFilters.verification = "all";
-
-      if (id === 'stagnant') {
-          // Stagnant > 7 days (Exclude finished)
-          const sevenDaysAgo = new Date(today);
-          sevenDaysAgo.setDate(today.getDate() - 7);
-          newFilters.endDate = formatDateForInput(sevenDaysAgo);
-          newFilters.status = ['waiting', 'in_progress', 'forwarded'];
-      } else if (id === 'reopened') {
-          newFilters.isReopened = true;
-      } else if (id === 'unverified') {
-          newFilters.status = ['finish'];
-          newFilters.verification = "unverified";
-      } else if (id === 'active') {
-          // Active within 24h
-          const yesterday = new Date(today);
-          yesterday.setDate(today.getDate() - 1);
-          newFilters.startDate = formatDateForInput(yesterday);
-      }
-
-      setFilters(newFilters);
-      setAppliedFilters(newFilters);
-      // Auto-open detailed filter if user wants to see what happened? 
-      // setIsFilterOpen(true); // Optional: Uncomment if you want to show the filled form immediately
+  const handleToggleSelect = (id) => {
+      setSelectedItems(prev => 
+          prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      );
   };
 
-  const statusOptions = [
-    { value: "waiting", label: "รอรับเรื่อง" },
-    { value: "in_progress", label: "กำลังดำเนินการ" },
-    { value: "finish", label: "เสร็จสิ้น" },
-    { value: "forwarded", label: "ส่งต่อหน่วยงานอื่น" },
-  ];
-
-  const typeOptions = [
-    { value: "ความปลอดภัย", label: "ความปลอดภัย" },
-    { value: "ไฟฟ้า", label: "ไฟฟ้า" },
-    { value: "ความสะอาด", label: "ความสะอาด" },
-    { value: "ต้นไม้/สวน", label: "ต้นไม้/สวน" },
-    { value: "จราจร", label: "จราจร" },
-    { value: "ทางเท้า", label: "ทางเท้า" },
-    { value: "น้ำท่วม", label: "น้ำท่วม/ระบายน้ำ" },
-  ];
-
-  // Filter Logic
-  const filteredData = useMemo(() => {
-    return MOCK_DATA.filter(item => {
-      // 1. Keyword (Real-time)
-      const searchLower = filters.keyword.toLowerCase();
-      const matchKeyword = 
-        !filters.keyword ||
-        item.title.toLowerCase().includes(searchLower) ||
-        item.description.toLowerCase().includes(searchLower) ||
-        item.case_id.toLowerCase().includes(searchLower) ||
-        item.hashtags.some(tag => tag.toLowerCase().includes(searchLower));
-
-      // 2. Advanced Filters
-      const matchStatus = appliedFilters.status.length === 0 || appliedFilters.status.includes(item.status);
-      const matchType = appliedFilters.type.length === 0 || appliedFilters.type.includes(item.type);
-      const matchOfficer = appliedFilters.officerIds.length === 0 || item.officer_ids.some(id => appliedFilters.officerIds.includes(id));
+  const handleGroupConfirm = (parentId, allMemberIds) => {
+      // Logic: Detach everyone from old relationships FIRST, then re-attach to new parent.
       
-      const matchLocation = !appliedFilters.location || (
-          item.address.province === appliedFilters.location.province &&
-          item.address.district === appliedFilters.location.district &&
-          item.address.sub_district === appliedFilters.location.sub_district
-      );
-
-      let matchDate = true;
-      const itemDate = new Date(item.timestamp).getTime();
+      const childIds = allMemberIds.filter(id => id !== parentId);
       
-      if (appliedFilters.startDate) matchDate = matchDate && itemDate >= new Date(appliedFilters.startDate).getTime();
-      if (appliedFilters.endDate) matchDate = matchDate && itemDate <= new Date(appliedFilters.endDate).setHours(23,59,59);
+      setTickets(prevTickets => {
+          // 1. Clean Slate: Remove children from old parents
+          const cleanTickets = prevTickets.map(ticket => {
+              if (ticket.related?.role === 'parent') {
+                  // Keep children ONLY if they are NOT in the new group (allMemberIds)
+                  // AND if the parent itself is NOT part of the new group (it might become a child)
+                  
+                  if (allMemberIds.includes(ticket.case_id)) {
+                      // This parent is being moved/regrouped, so it loses its old status for now
+                      return { ...ticket, related: { role: null } }; 
+                  }
 
-      // New Filters Logic
-      const matchReopen = !appliedFilters.isReopened || item.reopen_count > 0;
-      
-      let matchVerification = true;
-      if (appliedFilters.verification === 'verified') matchVerification = item.is_verified === true;
-      if (appliedFilters.verification === 'unverified') matchVerification = item.is_verified === false;
+                  const remainingChildren = ticket.related.children.filter(childId => !allMemberIds.includes(childId));
+                  
+                  if (remainingChildren.length === 0) {
+                      return { ...ticket, related: { role: null } }; // No kids left, back to independent
+                  }
+                  return { ...ticket, related: { ...ticket.related, children: remainingChildren } };
+              }
+              
+              if (ticket.related?.role === 'child' && allMemberIds.includes(ticket.case_id)) {
+                  // This child is being moved, strip it
+                  return { ...ticket, related: { role: null } };
+              }
 
-      return matchKeyword && matchStatus && matchType && matchOfficer && matchLocation && matchDate && matchReopen && matchVerification;
-    });
-  }, [filters.keyword, appliedFilters]);
+              return ticket;
+          });
 
-  const stats = {
-    total: MOCK_DATA.length,
-    filtered: filteredData.length,
-    waiting: filteredData.filter(i => i.status === 'waiting').length,
-    forwarded: filteredData.filter(i => i.status === 'forwarded').length,
-    done: filteredData.filter(i => i.status === 'finish').length,
+          // 2. Establish New Group
+          return cleanTickets.map(ticket => {
+              if (ticket.case_id === parentId) {
+                  // New Parent
+                  return { ...ticket, related: { role: 'parent', children: childIds } };
+              } else if (childIds.includes(ticket.case_id)) {
+                  // New Children
+                  return { ...ticket, related: { role: 'child', parent_id: parentId } };
+              }
+              return ticket;
+          });
+      });
+
+      setSelectedItems([]);
+      setShowGroupModal(false);
+  };
+
+  const handleUngroup = (childId) => {
+      setTickets(prev => {
+          let parentId = null;
+          const step1 = prev.map(t => {
+              if (t.case_id === childId) {
+                  parentId = t.related?.parent_id;
+                  return { ...t, related: { role: null } };
+              }
+              return t;
+          });
+
+          if (!parentId) return step1;
+
+          return step1.map(t => {
+              if (t.case_id === parentId) {
+                  const newChildren = t.related.children.filter(id => id !== childId);
+                  if (newChildren.length === 0) {
+                      return { ...t, related: { role: null } };
+                  }
+                  return { ...t, related: { ...t.related, children: newChildren } };
+              }
+              return t;
+          });
+      });
+  };
+
+  const handleQuickFilter = (id) => {
+      setQuickFilter(id);
+      setSelectedItems([]);
   };
 
   const handleFilterChange = (key, value) => {
@@ -930,82 +930,133 @@ export default function App() {
     setQuickFilter('all');
   };
 
+  const statusOptions = [
+    { value: "waiting", label: "รอรับเรื่อง" },
+    { value: "in_progress", label: "กำลังดำเนินการ" },
+    { value: "finish", label: "เสร็จสิ้น" },
+    { value: "forwarded", label: "ส่งต่อหน่วยงานอื่น" },
+  ];
+
+  const typeOptions = [
+    { value: "ความปลอดภัย", label: "ความปลอดภัย" },
+    { value: "ไฟฟ้า", label: "ไฟฟ้า" },
+    { value: "ความสะอาด", label: "ความสะอาด" },
+    { value: "ต้นไม้/สวน", label: "ต้นไม้/สวน" },
+    { value: "จราจร", label: "จราจร" },
+    { value: "ทางเท้า", label: "ทางเท้า" },
+    { value: "น้ำท่วม", label: "น้ำท่วม/ระบายน้ำ" },
+  ];
+
+  // Filter Logic
+  const filteredData = useMemo(() => {
+      return tickets.filter(item => {
+          // Quick Filters
+          if (quickFilter === 'parent' && item.related?.role !== 'parent') return false;
+          if (quickFilter === 'reopened' && item.reopen_count === 0) return false;
+          if (quickFilter === 'stagnant') {
+              const daysInactive = (new Date() - new Date(item.updated_at)) / (1000 * 60 * 60 * 24);
+              if (daysInactive <= 7 || item.status === 'finish') return false;
+          }
+          
+          // Keyword (from filters state for real-time)
+          const searchLower = filters.keyword.toLowerCase();
+          if (searchLower && 
+              !item.title.toLowerCase().includes(searchLower) && 
+              !item.case_id.toLowerCase().includes(searchLower) &&
+              !item.hashtags.some(tag => tag.toLowerCase().includes(searchLower))
+          ) return false;
+
+          // Advanced Filters (from appliedFilters)
+          if (appliedFilters.status.length > 0 && !appliedFilters.status.includes(item.status)) return false;
+          if (appliedFilters.type.length > 0 && !appliedFilters.type.includes(item.type)) return false;
+          if (appliedFilters.isReopened && item.reopen_count === 0) return false;
+          
+          if (appliedFilters.location) {
+              const { province, district, sub_district } = appliedFilters.location;
+              if (item.address.province !== province || item.address.district !== district || item.address.sub_district !== sub_district) return false;
+          }
+
+          if (appliedFilters.verification === 'verified' && !item.is_verified) return false;
+          if (appliedFilters.verification === 'unverified' && (item.is_verified || item.status !== 'finish')) return false;
+
+          return true;
+      });
+  }, [tickets, filters.keyword, appliedFilters, quickFilter]);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Building2 className="text-indigo-600" aria-hidden="true" />
+                <Building2 className="text-indigo-600" />
                 ระบบจัดการเรื่องแจ้ง
               </h1>
-              <p className="text-slate-500 text-sm mt-1">Operational Dashboard</p>
+              <p className="text-slate-500 text-sm">Operational Dashboard (Mockup V9)</p>
             </div>
             
-            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-1 sm:pb-0">
-               {[
-                 { label: "ทั้งหมด", val: stats.total, color: "text-slate-900" },
-                 { label: "เสร็จสิ้น", val: stats.done, color: "text-emerald-700" },
-                 { label: "รอรับเรื่อง", val: stats.waiting, color: "text-rose-700" },
-                 { label: "ส่งต่อ", val: stats.forwarded, color: "text-blue-700" },
-               ].map((stat, i) => (
-                 <div key={i} className="flex flex-col items-center px-2 sm:px-0 min-w-[60px]">
-                    <span className="text-[10px] text-slate-500 uppercase font-medium">{stat.label}</span>
-                    <span className={`text-xl font-bold ${stat.color}`}>{stat.val}</span>
-                 </div>
-               ))}
-            </div>
-          </div>
+            {/* Selection Action Bar */}
+            {selectedItems.length > 0 ? (
+                <div className="flex items-center gap-4 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg animate-in fade-in slide-in-from-top-2">
+                    <span className="font-bold text-sm whitespace-nowrap">{selectedItems.length} รายการที่เลือก</span>
+                    <div className="h-6 w-px bg-indigo-400"></div>
+                    <button 
+                        onClick={() => setShowGroupModal(true)}
+                        className="flex items-center gap-2 hover:bg-indigo-500 px-3 py-1.5 rounded transition-colors text-sm font-medium"
+                    >
+                        <Group size={16} />
+                        รวมกลุ่ม
+                    </button>
+                    <button 
+                        onClick={() => setSelectedItems([])}
+                        className="p-1 hover:bg-indigo-500 rounded"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+            ) : (
+               <div className="text-right text-xs text-slate-400 hidden sm:block">
+                   กด checkbox ที่มุมการ์ดเพื่อรวมกลุ่ม
+               </div>
+            )}
         </div>
       </header>
 
       {/* Filter Section */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col gap-4">
+      <div className="bg-white border-b border-slate-200 shadow-sm py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 gap-4 flex flex-col">
+            <QuickFilterBar currentFilter={quickFilter} onSelect={handleQuickFilter} />
             
-            {/* Quick Filter Bar (Now populates form) */}
-            <QuickFilterBar currentFilter={quickFilter} onSelect={handleQuickFilterSelect} />
-
-            {/* Main Search & Toggles */}
-            <div className="flex flex-col lg:flex-row gap-4 justify-between">
-              <div className="relative flex-1 max-w-2xl">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} aria-hidden="true" />
-                <input 
-                  type="text"
-                  placeholder="ค้นหา (Keyword, ID, Hashtag...)"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm placeholder:text-slate-400"
-                  value={filters.keyword}
-                  onChange={(e) => handleFilterChange('keyword', e.target.value)}
-                  aria-label="ค้นหาเรื่องแจ้ง"
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
+            <div className="flex gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                    <input 
+                      type="text"
+                      placeholder="ค้นหา (Keyword, ID...)"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      value={filters.keyword}
+                      onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
+                    />
+                </div>
                 <button 
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border font-medium transition-colors ${isFilterOpen ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
-                  aria-expanded={isFilterOpen}
                 >
-                  <Filter size={18} aria-hidden="true" />
-                  <span>ตัวกรองละเอียด</span>
-                  <ChevronDown size={16} className={`transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  <Filter size={18} />
+                  <span className="hidden sm:inline">ตัวกรองละเอียด</span>
+                  <ChevronDown size={16} className={`transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
                 </button>
-                
-                 <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'}`} aria-label="มุมมองตาราง"><LayoutGrid size={18} /></button>
-                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'}`} aria-label="มุมมองรายการ"><ListIcon size={18} /></button>
+                 <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0">
+                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'}`}><LayoutGrid size={18} /></button>
+                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'}`}><ListIcon size={18} /></button>
                 </div>
-              </div>
             </div>
 
             {/* Expanded Filters */}
             {isFilterOpen && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
                 
-                {/* Status */}
                 <MultiSelectDropdown 
                   label="สถานะ"
                   options={statusOptions}
@@ -1013,7 +1064,6 @@ export default function App() {
                   onChange={(val) => handleFilterChange('status', val)}
                 />
                 
-                {/* Type */}
                 <MultiSelectDropdown 
                   label="ประเภทเรื่อง"
                   options={typeOptions}
@@ -1022,16 +1072,14 @@ export default function App() {
                   enableSearch={true}
                 />
 
-                {/* Location */}
                 <div className="lg:col-span-2">
                    <LocationAutocomplete 
-                      data={MOCK_DATA}
+                      data={INITIAL_DATA}
                       selectedLocation={filters.location}
                       onSelect={(loc) => handleFilterChange('location', loc)}
                    />
                 </div>
 
-                {/* Officer */}
                 <MultiSelectDropdown 
                   label="จนท. รับผิดชอบ"
                   options={OFFICER_OPTIONS}
@@ -1040,7 +1088,6 @@ export default function App() {
                   enableSearch={true}
                 />
 
-                {/* Verification (New) */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">การรับรอง</label>
                   <select
@@ -1054,7 +1101,6 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Date Range */}
                 <div className="lg:col-span-2">
                    <label className="block text-sm font-medium text-slate-700 mb-1">ช่วงเวลาแจ้งเหตุ</label>
                    <div className="flex gap-2">
@@ -1063,19 +1109,16 @@ export default function App() {
                         className="w-1/2 p-2 rounded-md border border-slate-300 text-sm shadow-sm"
                         value={filters.startDate}
                         onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                        aria-label="วันเริ่มต้น"
                       />
                       <input 
                         type="date" 
                         className="w-1/2 p-2 rounded-md border border-slate-300 text-sm shadow-sm"
                         value={filters.endDate}
                         onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                         aria-label="วันสิ้นสุด"
                       />
                    </div>
                 </div>
 
-                {/* Reopen Checkbox (New) */}
                 <div className="flex items-center pt-6">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input 
@@ -1088,20 +1131,20 @@ export default function App() {
                     </label>
                 </div>
 
-                {/* Filter Actions */}
-                <div className="sm:col-span-2 lg:col-span-4 flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
-                   <div className="flex gap-2">
-                       {/* Save Search Button (Labeled) */}
+                {/* Filter Actions (Restored Buttons) */}
+                <div className="sm:col-span-2 lg:col-span-4 flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 pt-4 mt-2 gap-4">
+                   <div className="flex gap-2 w-full sm:w-auto">
+                       {/* Save Search Button */}
                        <button 
-                          className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-slate-200 hover:border-indigo-100 text-sm font-medium" 
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-slate-200 hover:border-indigo-100 text-sm font-medium" 
                           onClick={() => alert('ฟีเจอร์บันทึกตัวกรองจะเปิดใช้งานเร็วๆ นี้')}
                        >
                           <Bookmark size={16} />
                           บันทึกเงื่อนไข
                        </button>
-                       {/* Set Default Button (Labeled) */}
+                       {/* Set Default Button */}
                        <button 
-                          className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-slate-200 hover:border-indigo-100 text-sm font-medium" 
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-slate-200 hover:border-indigo-100 text-sm font-medium" 
                           onClick={() => alert('ฟีเจอร์ตั้งค่าเริ่มต้นจะเปิดใช้งานเร็วๆ นี้')}
                        >
                           <Settings size={16} />
@@ -1109,7 +1152,7 @@ export default function App() {
                        </button>
                    </div>
 
-                   <div className="flex gap-3">
+                   <div className="flex gap-3 w-full sm:w-auto justify-end">
                        <button 
                           onClick={resetFilters} 
                           className="text-sm text-slate-500 hover:text-rose-700 underline px-3 py-2"
@@ -1127,37 +1170,36 @@ export default function App() {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex justify-between items-center mb-4">
-             <div className="text-sm text-slate-600">
-                พบ <span className="font-bold text-slate-900">{filteredData.length}</span> รายการ 
-                <span className="text-slate-400 mx-1">|</span> 
-                จากทั้งหมด {stats.total}
-             </div>
-        </div>
-
-        {filteredData.length === 0 ? (
-           <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                <Search size={28} />
-             </div>
-             <h3 className="text-lg font-medium text-slate-900">ไม่พบรายการที่ค้นหา</h3>
-             <p className="text-slate-500">ลองปรับเปลี่ยนตัวกรองหรือเลือกตัวกรองด่วนอื่น</p>
-             <button onClick={resetFilters} className="mt-4 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50">ล้างตัวกรองทั้งหมด</button>
-           </div>
-        ) : (
-          <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3' : 'grid-cols-1'}`}>
+        <div className="mb-4 text-sm text-slate-600">พบ {filteredData.length} รายการ</div>
+        
+        <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3' : 'grid-cols-1'}`}>
             {filteredData.map((ticket) => (
-              <CaseCard key={ticket.case_id} ticket={ticket} viewMode={viewMode} />
+              <CaseCard 
+                  key={ticket.case_id} 
+                  ticket={ticket} 
+                  viewMode={viewMode}
+                  isSelected={selectedItems.includes(ticket.case_id)}
+                  onToggleSelect={handleToggleSelect}
+                  onUngroup={handleUngroup}
+              />
             ))}
-          </div>
-        )}
+        </div>
       </main>
+
+      {/* Group Modal */}
+      {showGroupModal && (
+          <GroupSelectionModal 
+              selectedCases={selectedItems} 
+              tickets={tickets}
+              onClose={() => setShowGroupModal(false)}
+              onConfirm={handleGroupConfirm}
+          />
+      )}
     </div>
   );
 }
