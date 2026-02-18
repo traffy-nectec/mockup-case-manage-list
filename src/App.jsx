@@ -342,6 +342,15 @@ const VERIFICATION_OPTIONS = [
   { value: "unverified", label: "รอการรับรอง" },
 ];
 
+const RATING_OPTIONS = [
+  { value: 0, label: "ยังไม่ประเมิน (0 ดาว)" },
+  { value: 1, label: "1 ดาว" },
+  { value: 2, label: "2 ดาว" },
+  { value: 3, label: "3 ดาว" },
+  { value: 4, label: "4 ดาว" },
+  { value: 5, label: "5 ดาว" },
+];
+
 // --- Utility Functions ---
 const timeAgo = (dateString) => {
   const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
@@ -804,7 +813,8 @@ export default function App() {
       keyword: "",
       status: [], 
       type: [],   
-      officerIds: [], 
+      officerIds: [],
+      rating: [], // New
       location: null,
       startDate: "",
       endDate: "",
@@ -919,6 +929,7 @@ export default function App() {
       status: [], 
       type: [],   
       officerIds: [], 
+      rating: [], // Reset new filter
       location: null,
       startDate: "",
       endDate: "",
@@ -971,6 +982,11 @@ export default function App() {
           if (appliedFilters.type.length > 0 && !appliedFilters.type.includes(item.type)) return false;
           if (appliedFilters.isReopened && item.reopen_count === 0) return false;
           
+          if (appliedFilters.rating.length > 0) {
+             const currentRating = item.rating ?? 0;
+             if (!appliedFilters.rating.includes(currentRating)) return false;
+          }
+
           if (appliedFilters.location) {
               const { province, district, sub_district } = appliedFilters.location;
               if (item.address.province !== province || item.address.district !== district || item.address.sub_district !== sub_district) return false;
@@ -1101,7 +1117,14 @@ export default function App() {
                   </select>
                 </div>
 
-                <div className="lg:col-span-2">
+                <MultiSelectDropdown 
+                  label="คะแนนความพึงพอใจ"
+                  options={RATING_OPTIONS}
+                  selectedValues={filters.rating}
+                  onChange={(val) => handleFilterChange('rating', val)}
+                />
+
+                <div className="lg:col-span-1"> {/* Adjusted span to fit rating */}
                    <label className="block text-sm font-medium text-slate-700 mb-1">ช่วงเวลาแจ้งเหตุ</label>
                    <div className="flex gap-2">
                       <input 
