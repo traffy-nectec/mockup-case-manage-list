@@ -11,8 +11,29 @@ import {
 
 // --- Configuration ---
 const DEFAULT_COVER_IMAGE = "https://images.unsplash.com/photo-1449824913929-2b3a6e3586dc?auto=format&fit=crop&q=80&w=400&h=300"; 
+const APP_VERSION = "v1.0.0";
 
-// --- Initial Mock Data (20 Items with diverse scenarios) ---
+// --- Data & Options ---
+const OFFICER_OPTIONS = [
+  { value: "STAFF_01", label: "สมชาย ใจดี (STAFF_01)" },
+  { value: "STAFF_02", label: "วิชัย มุ่งมั่น (STAFF_02)" },
+];
+
+const VERIFICATION_OPTIONS = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "verified", label: "รับรองแล้ว" },
+  { value: "unverified", label: "รอการรับรอง" },
+];
+
+const RATING_OPTIONS = [
+  { value: 0, label: "ยังไม่ประเมิน (0 ดาว)" },
+  { value: 1, label: "1 ดาว" },
+  { value: 2, label: "2 ดาว" },
+  { value: 3, label: "3 ดาว" },
+  { value: 4, label: "4 ดาว" },
+  { value: 5, label: "5 ดาว" },
+];
+
 const INITIAL_DATA = [
   // Group 1: KK Parent & Child
   {
@@ -47,7 +68,6 @@ const INITIAL_DATA = [
     reopen_count: 0, rating: null, is_verified: false,
     related: { role: 'child', parent_id: '2024-KK001' }
   },
-
   // Independent Cases
   {
     case_id: "2024-KK002",
@@ -84,7 +104,22 @@ const INITIAL_DATA = [
     reopen_count: 0, rating: null, is_verified: false,
     related: { role: null }
   },
-  // ... (Other existing data kept for brevity but assumed present) ...
+  {
+    case_id: "2024-KK004",
+    title: "ต้นไม้ล้มขวางถนน",
+    description: "พายุเข้าเมื่อคืน ต้นไม้ใหญ่ล้มขวางการจราจร รถผ่านไม่ได้",
+    images: ["https://images.unsplash.com/photo-1610998948067-9659b8782071?auto=format&fit=crop&q=80&w=400&h=300"],
+    type: "ต้นไม้/สวน",
+    status: "finish",
+    timestamp: "2024-02-14T06:00:00Z",
+    updated_at: "2024-02-14T14:30:00Z",
+    address: { sub_district: "ในเมือง", district: "เมือง", province: "ขอนแก่น", detail: "ถนนหน้าโรงเรียนกัลยาณวัตร" },
+    agencies: [{ name: "อบจ. ขอนแก่น", role: "main" }],
+    hashtags: ["#ต้นไม้ล้ม", "#กีดขวาง"],
+    stats: { chat_total: 7 },
+    reopen_count: 0, rating: 3, feedback: "มาช้าไปหน่อยครับ", is_verified: true, verified_by: "จนท. ภาคสนาม",
+    related: { role: null }
+  },
   {
     case_id: "2024-BKK009",
     title: "ขยะมูลฝอยตกค้าง",
@@ -316,7 +351,7 @@ const INITIAL_DATA = [
     case_id: "2024-KK022",
     title: "น้ำเสียลงบึงแก่นนคร",
     description: "ท่อระบายน้ำปล่อยน้ำเสียลงบึงโดยตรง ส่งกลิ่นเหม็น",
-    images: ["https://broken-link-example.com/image.jpg"], // Broken Link Test
+    images: ["https://images.unsplash.com/photo-1621451537084-482c73073a0f?auto=format&fit=crop&q=80&w=400&h=300"], 
     type: "ความสะอาด",
     status: "in_progress",
     timestamp: "2024-02-15T14:00:00Z",
@@ -328,27 +363,6 @@ const INITIAL_DATA = [
     reopen_count: 0, rating: null, is_verified: false,
     related: { role: null }
   }
-];
-
-// --- Dropdown Options ---
-const OFFICER_OPTIONS = [
-  { value: "STAFF_01", label: "สมชาย ใจดี (STAFF_01)" },
-  { value: "STAFF_02", label: "วิชัย มุ่งมั่น (STAFF_02)" },
-];
-
-const VERIFICATION_OPTIONS = [
-  { value: "all", label: "ทั้งหมด" },
-  { value: "verified", label: "รับรองแล้ว" },
-  { value: "unverified", label: "รอการรับรอง" },
-];
-
-const RATING_OPTIONS = [
-  { value: 0, label: "ยังไม่ประเมิน (0 ดาว)" },
-  { value: 1, label: "1 ดาว" },
-  { value: 2, label: "2 ดาว" },
-  { value: 3, label: "3 ดาว" },
-  { value: 4, label: "4 ดาว" },
-  { value: 5, label: "5 ดาว" },
 ];
 
 // --- Utility Functions ---
@@ -383,7 +397,296 @@ const getUniqueLocations = (data) => {
     return Array.from(locations.values());
 };
 
-// --- Components ---
+// --- Components (Defined BEFORE App to prevent ReferenceError) ---
+
+const StatusBadge = ({ status }) => {
+  const config = {
+    finish: { color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle2, label: "เสร็จสิ้น" },
+    in_progress: { color: "bg-amber-100 text-amber-800 border-amber-200", icon: Clock, label: "กำลังดำเนินการ" },
+    waiting: { color: "bg-rose-100 text-rose-800 border-rose-200", icon: AlertCircle, label: "รอรับเรื่อง" },
+    forwarded: { color: "bg-blue-100 text-blue-800 border-blue-200", icon: ArrowRightLeft, label: "ส่งต่อ" },
+  };
+  const { color, icon: Icon, label } = config[status] || config.waiting;
+  return (
+    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${color} shadow-sm whitespace-nowrap`}>
+      <Icon size={14} />
+      {label}
+    </span>
+  );
+};
+
+const CopyButton = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e) => { e.stopPropagation(); navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  return <button onClick={handleCopy} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600">{copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}</button>;
+};
+
+const QuickFilterBar = ({ currentFilter, onSelect }) => {
+    const filters = [
+        { id: 'all', label: 'ทั้งหมด', icon: null },
+        { id: 'stagnant', label: 'ค้างนาน > 7 วัน', icon: Clock, color: 'text-rose-600 bg-rose-50 border-rose-200' },
+        { id: 'reopened', label: 'มีการเปิดซ้ำ', icon: AlertCircle, color: 'text-orange-600 bg-orange-50 border-orange-200' },
+        { id: 'parent', label: 'Case หลัก (Parent)', icon: Layers, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
+    ];
+    return (
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+            {filters.map(f => (
+                <button key={f.id} onClick={() => onSelect(f.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${currentFilter === f.id ? 'bg-slate-800 text-white border-slate-800 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                    {f.icon && <f.icon size={14} className={currentFilter === f.id ? 'text-white' : f.color.split(' ')[0]} />}
+                    {f.label}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+const MultiSelectDropdown = ({ label, options, selectedValues, onChange, enableSearch = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  const toggleOption = (value) => {
+    const newValues = selectedValues.includes(value)
+      ? selectedValues.filter(v => v !== value)
+      : [...selectedValues, value];
+    onChange(newValues);
+  };
+
+  const filteredOptions = options.filter(opt => 
+    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full text-left p-2 rounded-md border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none flex items-center justify-between text-sm shadow-sm"
+      >
+        <span className={`truncate ${selectedValues.length === 0 ? "text-slate-500" : "text-slate-900 font-medium"}`}>
+          {selectedValues.length === 0 ? "เลือกทั้งหมด" : `เลือกแล้ว ${selectedValues.length} รายการ`}
+        </span>
+        <ChevronDown size={16} className="text-slate-400 shrink-0 ml-2" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
+          {enableSearch && (
+            <div className="sticky top-0 bg-white p-2 border-b border-slate-100">
+               <div className="relative">
+                  <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"/>
+                  <input 
+                    type="text"
+                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-indigo-400"
+                    placeholder="ค้นหา..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    autoFocus
+                  />
+               </div>
+            </div>
+          )}
+          {filteredOptions.length > 0 ? (
+             filteredOptions.map(option => (
+                <div 
+                  key={option.value} 
+                  onClick={() => toggleOption(option.value)}
+                  className="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-slate-50 last:border-0"
+                  role="option"
+                  aria-selected={selectedValues.includes(option.value)}
+                >
+                  <div className={`w-4 h-4 rounded border flex shrink-0 items-center justify-center transition-colors ${selectedValues.includes(option.value) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                    {selectedValues.includes(option.value) && <Check size={12} className="text-white" />}
+                  </div>
+                  <span className={`truncate ${selectedValues.includes(option.value) ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{option.label}</span>
+                </div>
+              ))
+          ) : (
+              <div className="p-3 text-center text-xs text-slate-400">ไม่พบข้อมูล</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const LocationAutocomplete = ({ data, onSelect, selectedLocation }) => {
+    const [inputValue, setInputValue] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef(null);
+    const availableLocations = useMemo(() => getUniqueLocations(data), [data]);
+
+    const filteredLocations = availableLocations.filter(loc => {
+        const searchStr = `${loc.province} ${loc.district} ${loc.sub_district}`.toLowerCase();
+        return searchStr.includes(inputValue.toLowerCase());
+    });
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleSelect = (loc) => {
+        onSelect(loc);
+        setIsOpen(false);
+        setInputValue("");
+    };
+
+    const handleClear = () => {
+        onSelect(null);
+        setInputValue("");
+    };
+
+    return (
+        <div className="relative" ref={wrapperRef}>
+            <label className="block text-sm font-medium text-slate-700 mb-1">พื้นที่ (ค้นหาตามข้อมูลที่มี)</label>
+            {!selectedLocation ? (
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <input
+                        type="text"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-sm placeholder:text-slate-400"
+                        placeholder="พิมพ์ชื่อตำบล อำเภอ หรือจังหวัด..."
+                        value={inputValue}
+                        onChange={(e) => {
+                            setInputValue(e.target.value);
+                            setIsOpen(true);
+                        }}
+                        onFocus={() => setIsOpen(true)}
+                    />
+                </div>
+            ) : (
+                <div className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-medium shadow-sm">
+                    <div className="flex items-center gap-2 truncate">
+                        <MapPin size={16} className="shrink-0" />
+                        <span className="truncate">
+                            {selectedLocation.province} › {selectedLocation.district} › {selectedLocation.sub_district}
+                        </span>
+                    </div>
+                    <button onClick={handleClear} className="text-indigo-500 hover:text-indigo-700 p-1">
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
+            {isOpen && inputValue.length > 0 && (
+                <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {filteredLocations.length > 0 ? (
+                        filteredLocations.map((loc, idx) => (
+                            <div
+                                key={idx}
+                                onClick={() => handleSelect(loc)}
+                                className="px-4 py-3 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 text-sm group"
+                            >
+                                <div className="font-medium text-slate-800 group-hover:text-indigo-700">
+                                    {loc.province} 
+                                    <span className="text-slate-400 mx-2">›</span> 
+                                    {loc.district}
+                                    <span className="text-slate-400 mx-2">›</span> 
+                                    {loc.sub_district}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="px-4 py-3 text-slate-500 text-sm text-center">
+                            ไม่พบพื้นที่ดังกล่าวในรายการแจ้งเหตุ
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const GroupSelectionModal = ({ selectedCases, tickets, onClose, onConfirm }) => {
+    const implicitParentIds = useMemo(() => {
+        const ids = new Set();
+        selectedCases.forEach(id => {
+            const t = tickets.find(ticket => ticket.case_id === id);
+            if (t?.related?.role === 'child' && t.related.parent_id) {
+                ids.add(t.related.parent_id);
+            }
+        });
+        return ids;
+    }, [selectedCases, tickets]);
+
+    const allInvolvedIds = useMemo(() => [...new Set([...selectedCases, ...Array.from(implicitParentIds)])], [selectedCases, implicitParentIds]);
+    const allInvolvedTickets = useMemo(() => tickets.filter(t => allInvolvedIds.includes(t.case_id)), [tickets, allInvolvedIds]);
+
+    const defaultParentId = useMemo(() => {
+        const existingParent = allInvolvedTickets.find(t => t.related?.role === 'parent');
+        return existingParent ? existingParent.case_id : selectedCases[0];
+    }, [allInvolvedTickets, selectedCases]);
+
+    const [selectedParentId, setSelectedParentId] = useState(defaultParentId);
+
+    useEffect(() => {
+        setSelectedParentId(defaultParentId);
+    }, [defaultParentId]);
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <Layers className="text-indigo-600" /> รวมกลุ่มเรื่องแจ้ง
+                    </h3>
+                    <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto">
+                    <div className="text-sm text-slate-600 mb-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <p className="font-semibold text-indigo-900 mb-1">ระบบดึงข้อมูลที่เกี่ยวข้องมาให้แล้ว</p>
+                        คุณเลือก <strong>{selectedCases.length} รายการ</strong> แต่ระบบพบว่ามีเคสที่เกี่ยวข้อง (เช่น เคสแม่ของกลุ่มเดิม) จึงนำมารวมให้เลือกด้วย
+                        <br/><br/>
+                        กรุณาเลือก 1 รายการเพื่อเป็น <strong>"Case หลัก (Parent)"</strong> ของกลุ่มใหม่นี้
+                    </div>
+                    
+                    <div className="space-y-2">
+                        {allInvolvedTickets.map(ticket => (
+                            <div 
+                                key={ticket.case_id}
+                                onClick={() => setSelectedParentId(ticket.case_id)}
+                                className={`p-3 rounded-lg border cursor-pointer flex items-center gap-3 transition-all ${selectedParentId === ticket.case_id ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
+                            >
+                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedParentId === ticket.case_id ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
+                                    {selectedParentId === ticket.case_id && <Check size={12} className="text-white" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-xs font-mono text-slate-500">#{ticket.case_id}</span>
+                                        {ticket.related?.role === 'parent' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 rounded font-medium">Main Case เดิม</span>}
+                                        {implicitParentIds.has(ticket.case_id) && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">เพิ่มโดยระบบ</span>}
+                                    </div>
+                                    <div className="text-sm font-medium text-slate-900 truncate">{ticket.title}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 mt-auto">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-colors">ยกเลิก</button>
+                    <button onClick={() => onConfirm(selectedParentId, allInvolvedIds)} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">ยืนยันรวมกลุ่ม ({allInvolvedIds.length} รายการ)</button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const CaseCard = ({ ticket, viewMode, isSelected, onToggleSelect, onUngroup }) => {
   const [imageError, setImageError] = useState(false);
@@ -503,300 +806,7 @@ const CaseCard = ({ ticket, viewMode, isSelected, onToggleSelect, onUngroup }) =
   );
 };
 
-// ... Helper Components ...
-const StatusBadge = ({ status }) => {
-  const config = {
-    finish: { color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle2, label: "เสร็จสิ้น" },
-    in_progress: { color: "bg-amber-100 text-amber-800 border-amber-200", icon: Clock, label: "กำลังดำเนินการ" },
-    waiting: { color: "bg-rose-100 text-rose-800 border-rose-200", icon: AlertCircle, label: "รอรับเรื่อง" },
-    forwarded: { color: "bg-blue-100 text-blue-800 border-blue-200", icon: ArrowRightLeft, label: "ส่งต่อ" },
-  };
-  const { color, icon: Icon, label } = config[status] || config.waiting;
-  return (
-    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${color} shadow-sm whitespace-nowrap`}>
-      <Icon size={14} />
-      {label}
-    </span>
-  );
-};
-
-const QuickFilterBar = ({ currentFilter, onSelect }) => {
-    const filters = [
-        { id: 'all', label: 'ทั้งหมด', icon: null },
-        { id: 'stagnant', label: 'ค้างนาน > 7 วัน', icon: Clock, color: 'text-rose-600 bg-rose-50 border-rose-200' },
-        { id: 'reopened', label: 'มีการเปิดซ้ำ', icon: AlertCircle, color: 'text-orange-600 bg-orange-50 border-orange-200' },
-        { id: 'parent', label: 'Case หลัก (Parent)', icon: Layers, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
-    ];
-    return (
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
-            {filters.map(f => (
-                <button key={f.id} onClick={() => onSelect(f.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${currentFilter === f.id ? 'bg-slate-800 text-white border-slate-800 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
-                    {f.icon && <f.icon size={14} className={currentFilter === f.id ? 'text-white' : f.color.split(' ')[0]} />}
-                    {f.label}
-                </button>
-            ))}
-        </div>
-    );
-};
-
-const CopyButton = ({ text }) => {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = (e) => { e.stopPropagation(); navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  return <button onClick={handleCopy} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600">{copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}</button>;
-};
-
-const MultiSelectDropdown = ({ label, options, selectedValues, onChange, enableSearch = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef]);
-
-  const toggleOption = (value) => {
-    const newValues = selectedValues.includes(value)
-      ? selectedValues.filter(v => v !== value)
-      : [...selectedValues, value];
-    onChange(newValues);
-  };
-
-  const filteredOptions = options.filter(opt => 
-    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="relative" ref={wrapperRef}>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left p-2 rounded-md border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none flex items-center justify-between text-sm shadow-sm"
-      >
-        <span className={`truncate ${selectedValues.length === 0 ? "text-slate-500" : "text-slate-900 font-medium"}`}>
-          {selectedValues.length === 0 ? "เลือกทั้งหมด" : `เลือกแล้ว ${selectedValues.length} รายการ`}
-        </span>
-        <ChevronDown size={16} className="text-slate-400 shrink-0 ml-2" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
-          {enableSearch && (
-            <div className="sticky top-0 bg-white p-2 border-b border-slate-100">
-               <div className="relative">
-                  <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"/>
-                  <input 
-                    type="text"
-                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-indigo-400"
-                    placeholder="ค้นหา..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    autoFocus
-                  />
-               </div>
-            </div>
-          )}
-          {filteredOptions.length > 0 ? (
-             filteredOptions.map(option => (
-                <div 
-                  key={option.value} 
-                  onClick={() => toggleOption(option.value)}
-                  className="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-slate-50 last:border-0"
-                >
-                  <div className={`w-4 h-4 rounded border flex shrink-0 items-center justify-center transition-colors ${selectedValues.includes(option.value) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
-                    {selectedValues.includes(option.value) && <Check size={12} className="text-white" />}
-                  </div>
-                  <span className={`truncate ${selectedValues.includes(option.value) ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{option.label}</span>
-                </div>
-              ))
-          ) : (
-              <div className="p-3 text-center text-xs text-slate-400">ไม่พบข้อมูล</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const LocationAutocomplete = ({ data, onSelect, selectedLocation }) => {
-    const [inputValue, setInputValue] = useState("");
-    const [isOpen, setIsOpen] = useState(false);
-    const wrapperRef = useRef(null);
-    const availableLocations = useMemo(() => getUniqueLocations(data), [data]);
-
-    const filteredLocations = availableLocations.filter(loc => {
-        const searchStr = `${loc.province} ${loc.district} ${loc.sub_district}`.toLowerCase();
-        return searchStr.includes(inputValue.toLowerCase());
-    });
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const handleSelect = (loc) => {
-        onSelect(loc);
-        setIsOpen(false);
-        setInputValue("");
-    };
-
-    const handleClear = () => {
-        onSelect(null);
-        setInputValue("");
-    };
-
-    return (
-        <div className="relative" ref={wrapperRef}>
-            <label className="block text-sm font-medium text-slate-700 mb-1">พื้นที่ (ค้นหาตามข้อมูลที่มี)</label>
-            {!selectedLocation ? (
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                    <input
-                        type="text"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-sm placeholder:text-slate-400"
-                        placeholder="พิมพ์ชื่อตำบล อำเภอ หรือจังหวัด..."
-                        value={inputValue}
-                        onChange={(e) => {
-                            setInputValue(e.target.value);
-                            setIsOpen(true);
-                        }}
-                        onFocus={() => setIsOpen(true)}
-                    />
-                </div>
-            ) : (
-                <div className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-medium shadow-sm">
-                    <div className="flex items-center gap-2 truncate">
-                        <MapPin size={16} className="shrink-0" />
-                        <span className="truncate">
-                            {selectedLocation.province} › {selectedLocation.district} › {selectedLocation.sub_district}
-                        </span>
-                    </div>
-                    <button onClick={handleClear} className="text-indigo-500 hover:text-indigo-700 p-1">
-                        <X size={16} />
-                    </button>
-                </div>
-            )}
-            {isOpen && inputValue.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {filteredLocations.length > 0 ? (
-                        filteredLocations.map((loc, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => handleSelect(loc)}
-                                className="px-4 py-3 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 text-sm group"
-                            >
-                                <div className="font-medium text-slate-800 group-hover:text-indigo-700">
-                                    {loc.province} 
-                                    <span className="text-slate-400 mx-2">›</span> 
-                                    {loc.district}
-                                    <span className="text-slate-400 mx-2">›</span> 
-                                    {loc.sub_district}
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="px-4 py-3 text-slate-500 text-sm text-center">
-                            ไม่พบพื้นที่ดังกล่าวในรายการแจ้งเหตุ
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-};
-
-// --- Group Selection Modal ---
-const GroupSelectionModal = ({ selectedCases, tickets, onClose, onConfirm }) => {
-    // 1. Find implicit parents (parents of any selected children)
-    const implicitParentIds = useMemo(() => {
-        const ids = new Set();
-        selectedCases.forEach(id => {
-            const t = tickets.find(ticket => ticket.case_id === id);
-            if (t?.related?.role === 'child' && t.related.parent_id) {
-                ids.add(t.related.parent_id);
-            }
-        });
-        return ids;
-    }, [selectedCases, tickets]);
-
-    // 2. Combine explicit selection with implicit parents
-    const allInvolvedIds = useMemo(() => [...new Set([...selectedCases, ...Array.from(implicitParentIds)])], [selectedCases, implicitParentIds]);
-    const allInvolvedTickets = useMemo(() => tickets.filter(t => allInvolvedIds.includes(t.case_id)), [tickets, allInvolvedIds]);
-
-    // 3. Determine default parent: Prioritize existing parent, otherwise first selection
-    const defaultParentId = useMemo(() => {
-        const existingParent = allInvolvedTickets.find(t => t.related?.role === 'parent');
-        return existingParent ? existingParent.case_id : selectedCases[0];
-    }, [allInvolvedTickets, selectedCases]);
-
-    const [selectedParentId, setSelectedParentId] = useState(defaultParentId);
-
-    // Update state if default changes (e.g. initial load)
-    useEffect(() => {
-        setSelectedParentId(defaultParentId);
-    }, [defaultParentId]);
-
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <Layers className="text-indigo-600" /> รวมกลุ่มเรื่องแจ้ง
-                    </h3>
-                    <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
-                </div>
-                
-                <div className="p-6 overflow-y-auto">
-                    <div className="text-sm text-slate-600 mb-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                        <p className="font-semibold text-indigo-900 mb-1">ระบบดึงข้อมูลที่เกี่ยวข้องมาให้แล้ว</p>
-                        คุณเลือก <strong>{selectedCases.length} รายการ</strong> แต่ระบบพบว่ามีเคสที่เกี่ยวข้อง (เช่น เคสแม่ของกลุ่มเดิม) จึงนำมารวมให้เลือกด้วย
-                        <br/><br/>
-                        กรุณาเลือก 1 รายการเพื่อเป็น <strong>"Case หลัก (Parent)"</strong> ของกลุ่มใหม่นี้
-                    </div>
-                    
-                    <div className="space-y-2">
-                        {allInvolvedTickets.map(ticket => (
-                            <div 
-                                key={ticket.case_id}
-                                onClick={() => setSelectedParentId(ticket.case_id)}
-                                className={`p-3 rounded-lg border cursor-pointer flex items-center gap-3 transition-all ${selectedParentId === ticket.case_id ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
-                            >
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedParentId === ticket.case_id ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}>
-                                    {selectedParentId === ticket.case_id && <Check size={12} className="text-white" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="text-xs font-mono text-slate-500">#{ticket.case_id}</span>
-                                        {ticket.related?.role === 'parent' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 rounded font-medium">Main Case เดิม</span>}
-                                        {implicitParentIds.has(ticket.case_id) && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">เพิ่มโดยระบบ</span>}
-                                    </div>
-                                    <div className="text-sm font-medium text-slate-900 truncate">{ticket.title}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 mt-auto">
-                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-colors">ยกเลิก</button>
-                    <button onClick={() => onConfirm(selectedParentId, allInvolvedIds)} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">ยืนยันรวมกลุ่ม ({allInvolvedIds.length} รายการ)</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- Main App ---
+// --- Main App (Must be Last) ---
 
 export default function App() {
   const [tickets, setTickets] = useState(INITIAL_DATA);
@@ -834,45 +844,34 @@ export default function App() {
   };
 
   const handleGroupConfirm = (parentId, allMemberIds) => {
-      // Logic: Detach everyone from old relationships FIRST, then re-attach to new parent.
-      
       const childIds = allMemberIds.filter(id => id !== parentId);
       
       setTickets(prevTickets => {
-          // 1. Clean Slate: Remove children from old parents
           const cleanTickets = prevTickets.map(ticket => {
               if (ticket.related?.role === 'parent') {
-                  // Keep children ONLY if they are NOT in the new group (allMemberIds)
-                  // AND if the parent itself is NOT part of the new group (it might become a child)
-                  
                   if (allMemberIds.includes(ticket.case_id)) {
-                      // This parent is being moved/regrouped, so it loses its old status for now
                       return { ...ticket, related: { role: null } }; 
                   }
 
                   const remainingChildren = ticket.related.children.filter(childId => !allMemberIds.includes(childId));
                   
                   if (remainingChildren.length === 0) {
-                      return { ...ticket, related: { role: null } }; // No kids left, back to independent
+                      return { ...ticket, related: { role: null } }; 
                   }
                   return { ...ticket, related: { ...ticket.related, children: remainingChildren } };
               }
               
               if (ticket.related?.role === 'child' && allMemberIds.includes(ticket.case_id)) {
-                  // This child is being moved, strip it
                   return { ...ticket, related: { role: null } };
               }
 
               return ticket;
           });
 
-          // 2. Establish New Group
           return cleanTickets.map(ticket => {
               if (ticket.case_id === parentId) {
-                  // New Parent
                   return { ...ticket, related: { role: 'parent', children: childIds } };
               } else if (childIds.includes(ticket.case_id)) {
-                  // New Children
                   return { ...ticket, related: { role: 'child', parent_id: parentId } };
               }
               return ticket;
@@ -929,7 +928,7 @@ export default function App() {
       status: [], 
       type: [],   
       officerIds: [], 
-      rating: [], // Reset new filter
+      rating: [], 
       location: null,
       startDate: "",
       endDate: "",
@@ -1005,11 +1004,14 @@ export default function App() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Building2 className="text-indigo-600" />
-                ระบบจัดการเรื่องแจ้ง
-              </h1>
-              <p className="text-slate-500 text-sm">Operational Dashboard (Mockup V9)</p>
+              <div className="flex items-baseline gap-3">
+                  <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    <Building2 className="text-indigo-600" />
+                    ระบบจัดการเรื่องแจ้ง
+                  </h1>
+                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">{APP_VERSION}</span>
+              </div>
+              <p className="text-slate-500 text-sm">Operational Dashboard</p>
             </div>
             
             {/* Selection Action Bar */}
@@ -1124,7 +1126,7 @@ export default function App() {
                   onChange={(val) => handleFilterChange('rating', val)}
                 />
 
-                <div className="lg:col-span-1"> {/* Adjusted span to fit rating */}
+                <div className="lg:col-span-1"> 
                    <label className="block text-sm font-medium text-slate-700 mb-1">ช่วงเวลาแจ้งเหตุ</label>
                    <div className="flex gap-2">
                       <input 
@@ -1154,7 +1156,7 @@ export default function App() {
                     </label>
                 </div>
 
-                {/* Filter Actions (Restored Buttons) */}
+                {/* Filter Actions */}
                 <div className="sm:col-span-2 lg:col-span-4 flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 pt-4 mt-2 gap-4">
                    <div className="flex gap-2 w-full sm:w-auto">
                        {/* Save Search Button */}
